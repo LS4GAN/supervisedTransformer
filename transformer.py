@@ -19,7 +19,7 @@ class EncoderDecoder(nn.Module):
     A standard Encoder-Decoder architecture.
     Base for this and mnay other models
     """
-    def __init__(self, encoder, decoder, src_embed, tgt_embed, generator):
+    def __init__(self, encoder, decoder, src_embed, tgt_embed, generator, inference=False):
         super(EncoderDecoder, self).__init__()
         self.encoder = encoder 
         self.decoder = decoder 
@@ -31,6 +31,7 @@ class EncoderDecoder(nn.Module):
         # generator converts the output embedding 
         # from the decoder to vocabulary
         self.generator = generator
+        self.inference = inference
 
     def forward(self, src, tgt):
         """
@@ -38,17 +39,23 @@ class EncoderDecoder(nn.Module):
         """
         # MORE ANNOTATION HERE, ESPECIALLY FOR THE MASKS
         memory = self.encode(src)
-#         print(memory.shape)
         output = self.decode(memory, tgt)
-#         print(output.shape)
-#         input()
-        return self.generator(output)
+        if self.inference:
+            return output
+        else:
+            return self.generator(output)
 
     def encode(self, src):
         return self.encoder(self.src_embed(src))
 
     def decode(self, memory, tgt):
-        return self.decoder(self.tgt_embed(tgt), memory)
+        if self.inference:
+            return self.decoder(tgt, memory)
+        else:
+            return self.decoder(self.tgt_embed(tgt), memory)
+    
+    def infer(self):
+        self.inference = True
 
 # class Embeddings(nn.Module):
 #     def __init__(self, d_model, vocab):
